@@ -24,10 +24,10 @@ jobs:
           // Define all your Supabase projects here
           // process.env reads the secrets we inject in the next step
           const projects = [
-            { url: process.env.SUPABASE_URL_1, key: process.env.SUPABASE_ANON_KEY_1, table: 'raw_messages' },
-            { url: process.env.SUPABASE_URL_2, key: process.env.SUPABASE_ANON_KEY_2, table: 'users' },
-            { url: process.env.SUPABASE_URL_3, key: process.env.SUPABASE_ANON_KEY_3, table: 'orders' },
-            { url: process.env.SUPABASE_URL_4, key: process.env.SUPABASE_ANON_KEY_4, table: 'posts' },
+            { url: process.env.SUPABASE_URL_1, key: process.env.SUPABASE_ANON_KEY_1, table: 'feature_flags' },
+            { url: process.env.SUPABASE_URL_2, key: process.env.SUPABASE_ANON_KEY_2, table: 'fixtures' },
+            { url: process.env.SUPABASE_URL_3, key: process.env.SUPABASE_ANON_KEY_3, table: 'active_subscription_tiers' },
+            { url: process.env.SUPABASE_URL_4, key: process.env.SUPABASE_ANON_KEY_4, table: 'audit_logs' },
           ];
           
           // then use project.table instead of the hardcoded table variable
