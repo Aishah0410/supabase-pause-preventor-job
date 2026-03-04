@@ -29,11 +29,18 @@ jobs:
             { url: process.env.SUPABASE_URL_3, key: process.env.SUPABASE_ANON_KEY_3, table: 'active_subscription_tiers' },
             { url: process.env.SUPABASE_URL_4, key: process.env.SUPABASE_ANON_KEY_4, table: 'audit_logs' },
           ];
-          
+
           // Loop through each project and send a request to each one
-          projects.forEach(({ url, key, table }) => {
-              const cleanUrl = (url || '').trim();
-              const cleanKey = (key || '').trim();
+          projects.forEach(({ url, key, table }, index) => {
+            // Trim whitespace/newlines that may have been accidentally included in the secret
+            const cleanUrl = (url || '').trim();
+            const cleanKey = (key || '').trim();
+
+            // Skip if either value is missing — avoids crashing on undefined secrets
+            if (!cleanUrl || !cleanKey) {
+              console.warn('Project', index + 1, '-> Skipped (missing URL or key)');
+              return;
+            }
 
             // Build the full REST API URL that Supabase exposes for any table
             // ?select=id&limit=1 means: only fetch the id column, and only 1 row
@@ -42,15 +49,17 @@ jobs:
             // Make the HTTPS GET request to Supabase
             https.get({
               hostname: parsed.hostname,             // e.g. xxxx.supabase.co
-              path: parsed.pathname + parsed.search, // e.g. /rest/v1/messages?select=id&limit=1
+              path: parsed.pathname + parsed.search, // e.g. /rest/v1/active_subscription_tiers?select=id&limit=1
               headers: {
-                'apikey': cleanKey,                       // Supabase requires this to identify the project
-                'Authorization': 'Bearer ' + cleanKey    // Supabase also requires this for row-level auth
+                'apikey': cleanKey,                    // Supabase requires this to identify the project
+                'Authorization': 'Bearer ' + cleanKey // Supabase also requires this for row-level auth
               }
             }, (res) => {
               // When Supabase responds, log the hostname and HTTP status code
               // 200 = success, anything else = something is wrong
               console.log(parsed.hostname, '-> Status:', res.statusCode);
+              // Discard the response body so Node.js doesn't hang waiting for it to finish
+              res.resume();
             }).on('error', (e) => {
               // If the request itself fails (e.g. network issue, wrong URL), log the error
               console.error(parsed.hostname, '-> Error:', e.message);
