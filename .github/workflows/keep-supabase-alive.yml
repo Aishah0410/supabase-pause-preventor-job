@@ -31,19 +31,21 @@ jobs:
           ];
           
           // Loop through each project and send a request to each one
-          projects.forEach(({ url, key }) => {
+          projects.forEach(({ url, key, table }) => {
+              const cleanUrl = (url || '').trim();
+              const cleanKey = (key || '').trim();
 
             // Build the full REST API URL that Supabase exposes for any table
             // ?select=id&limit=1 means: only fetch the id column, and only 1 row
-            const parsed = new URL(url + '/rest/v1/' + table + '?select=id&limit=1');
+            const parsed = new URL(cleanUrl + '/rest/v1/' + table + '?select=id&limit=1');
 
             // Make the HTTPS GET request to Supabase
             https.get({
               hostname: parsed.hostname,             // e.g. xxxx.supabase.co
               path: parsed.pathname + parsed.search, // e.g. /rest/v1/messages?select=id&limit=1
               headers: {
-                'apikey': key,                       // Supabase requires this to identify the project
-                'Authorization': 'Bearer ' + key    // Supabase also requires this for row-level auth
+                'apikey': cleanKey,                       // Supabase requires this to identify the project
+                'Authorization': 'Bearer ' + cleanKey    // Supabase also requires this for row-level auth
               }
             }, (res) => {
               // When Supabase responds, log the hostname and HTTP status code
