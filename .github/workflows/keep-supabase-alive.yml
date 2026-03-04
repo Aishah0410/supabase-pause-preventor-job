@@ -24,14 +24,14 @@ jobs:
           // Define all your Supabase projects here
           // process.env reads the secrets we inject in the next step
           const projects = [
-            { url: process.env.SUPABASE_URL_1, key: process.env.SUPABASE_ANON_KEY_1 },
-            { url: process.env.SUPABASE_URL_2, key: process.env.SUPABASE_ANON_KEY_2 },
-            { url: process.env.SUPABASE_URL_3, key: process.env.SUPABASE_ANON_KEY_3 },
-            { url: process.env.SUPABASE_URL_4, key: process.env.SUPABASE_ANON_KEY_4 },
+            { url: process.env.SUPABASE_URL_1, key: process.env.SUPABASE_ANON_KEY_1, table: 'raw_messages' },
+            { url: process.env.SUPABASE_URL_2, key: process.env.SUPABASE_ANON_KEY_2, table: 'users' },
+            { url: process.env.SUPABASE_URL_3, key: process.env.SUPABASE_ANON_KEY_3, table: 'orders' },
+            { url: process.env.SUPABASE_URL_4, key: process.env.SUPABASE_ANON_KEY_4, table: 'posts' },
           ];
-
-          // The table to query — just needs to exist, we only fetch 1 row to keep it lightweight
-          const table = 'messages';
+          
+          // then use project.table instead of the hardcoded table variable
+          projects.forEach(({ url, key, table }) => {
 
           // Loop through each project and send a request to each one
           projects.forEach(({ url, key }) => {
