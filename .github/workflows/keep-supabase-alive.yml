@@ -1,0 +1,59 @@
+name: Keep Supabase Alive
+
+on:
+  # Run automatically on a schedule (cron format: minute hour day month weekday)
+  # '0 8 * * 1,4' means: at 8:00 AM UTC, every Monday (1) and Thursday (4)
+  schedule:
+    - cron: '0 8 * * 1,4'
+  # Also allow triggering manually from GitHub Actions UI (for testing)
+  workflow_dispatch:
+
+jobs:
+  ping:
+    # Use a free GitHub-hosted Linux virtual machine to run this job
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping Supabase Projects
+        run: |
+          node -e "
+          // Load Node's built-in HTTPS module — no npm install needed
+          const https = require('https');
+
+          // Define all your Supabase projects here as an array of objects
+          // GitHub replaces ${{ secrets.XXX }} with the actual secret value before running
+          const projects = [
+            { url: '${{ secrets.SUPABASE_URL_1 }}', key: '${{ secrets.SUPABASE_ANON_KEY_1 }}' },
+            { url: '${{ secrets.SUPABASE_URL_2 }}', key: '${{ secrets.SUPABASE_ANON_KEY_2 }}' },
+          ];
+
+          // The table to query — just needs to exist, we only fetch 1 row
+          const table = 'messages';
+
+          // Loop through each project and send a request to each one
+          projects.forEach(({ url, key }) => {
+
+            // Build the full REST API URL that Supabase exposes for any table
+            // ?select=id&limit=1 means: only fetch the id column, and only 1 row (lightweight)
+            const parsed = new URL(url + '/rest/v1/' + table + '?select=id&limit=1');
+
+            // Make the HTTPS GET request to Supabase
+            https.get({
+              hostname: parsed.hostname,        // e.g. xxxx.supabase.co
+              path: parsed.pathname + parsed.search, // e.g. /rest/v1/messages?select=id&limit=1
+              headers: {
+                'apikey': key,                  // Supabase requires this to identify the project
+                'Authorization': 'Bearer ' + key // Supabase also requires this for row-level auth
+              }
+            }, (res) => {
+              // When Supabase responds, log the project hostname and HTTP status code
+              // 200 = success, anything else = something is wrong
+              console.log(parsed.hostname, '→ Status:', res.statusCode);
+
+            }).on('error', (e) => {
+              // If the request itself fails (e.g. network issue, wrong URL), log the error
+              console.error(parsed.hostname, '→ Error:', e.message);
+            });
+
+          }); // end forEach
+          "
