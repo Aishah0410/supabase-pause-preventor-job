@@ -25,6 +25,8 @@ jobs:
           const projects = [
             { url: '${{ secrets.SUPABASE_URL_1 }}', key: '${{ secrets.SUPABASE_ANON_KEY_1 }}' },
             { url: '${{ secrets.SUPABASE_URL_2 }}', key: '${{ secrets.SUPABASE_ANON_KEY_2 }}' },
+            { url: '${{ secrets.SUPABASE_URL_3 }}', key: '${{ secrets.SUPABASE_ANON_KEY_3 }}' },
+            { url: '${{ secrets.SUPABASE_URL_4 }}', key: '${{ secrets.SUPABASE_ANON_KEY_4 }}' },
           ];
 
           // The table to query — just needs to exist, we only fetch 1 row
