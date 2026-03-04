@@ -14,48 +14,63 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Ping Supabase Projects
+      # Step 1: Write the JS file to disk
+      # We do this separately so GitHub Actions doesn't try to parse the JS code as its own syntax
+      - name: Create ping script
         run: |
-          node -e "
-          // Load Node's built-in HTTPS module — no npm install needed
+          cat << 'EOF' > ping.js
           const https = require('https');
 
-          // Define all your Supabase projects here as an array of objects
-          // GitHub replaces ${{ secrets.XXX }} with the actual secret value before running
+          // Define all your Supabase projects here
+          // process.env reads the secrets we inject in the next step
           const projects = [
             { url: process.env.SUPABASE_URL_1, key: process.env.SUPABASE_ANON_KEY_1 },
             { url: process.env.SUPABASE_URL_2, key: process.env.SUPABASE_ANON_KEY_2 },
             { url: process.env.SUPABASE_URL_3, key: process.env.SUPABASE_ANON_KEY_3 },
             { url: process.env.SUPABASE_URL_4, key: process.env.SUPABASE_ANON_KEY_4 },
           ];
-          
-          // The table to query — just needs to exist, we only fetch 1 row
+
+          // The table to query — just needs to exist, we only fetch 1 row to keep it lightweight
           const table = 'messages';
 
           // Loop through each project and send a request to each one
           projects.forEach(({ url, key }) => {
 
             // Build the full REST API URL that Supabase exposes for any table
-            // ?select=id&limit=1 means: only fetch the id column, and only 1 row (lightweight)
+            // ?select=id&limit=1 means: only fetch the id column, and only 1 row
             const parsed = new URL(url + '/rest/v1/' + table + '?select=id&limit=1');
 
             // Make the HTTPS GET request to Supabase
             https.get({
-              hostname: parsed.hostname,        // e.g. xxxx.supabase.co
+              hostname: parsed.hostname,             // e.g. xxxx.supabase.co
               path: parsed.pathname + parsed.search, // e.g. /rest/v1/messages?select=id&limit=1
               headers: {
-                'apikey': key,                  // Supabase requires this to identify the project
-                'Authorization': 'Bearer ' + key // Supabase also requires this for row-level auth
+                'apikey': key,                       // Supabase requires this to identify the project
+                'Authorization': 'Bearer ' + key    // Supabase also requires this for row-level auth
               }
             }, (res) => {
-              // When Supabase responds, log the project hostname and HTTP status code
+              // When Supabase responds, log the hostname and HTTP status code
               // 200 = success, anything else = something is wrong
-              console.log(parsed.hostname, '→ Status:', res.statusCode);
-
+              console.log(parsed.hostname, '-> Status:', res.statusCode);
             }).on('error', (e) => {
               // If the request itself fails (e.g. network issue, wrong URL), log the error
-              console.error(parsed.hostname, '→ Error:', e.message);
+              console.error(parsed.hostname, '-> Error:', e.message);
             });
 
           }); // end forEach
-          "
+          EOF
+
+      # Step 2: Run the JS file with secrets injected as environment variables
+      # ${{ secrets.XXX }} pulls the value from GitHub repo secrets and exposes it as an env var
+      # The JS file reads them via process.env.XXX
+      - name: Run ping script
+        env:
+          SUPABASE_URL_1: ${{ secrets.SUPABASE_URL_1 }}
+          SUPABASE_ANON_KEY_1: ${{ secrets.SUPABASE_ANON_KEY_1 }}
+          SUPABASE_URL_2: ${{ secrets.SUPABASE_URL_2 }}
+          SUPABASE_ANON_KEY_2: ${{ secrets.SUPABASE_ANON_KEY_2 }}
+          SUPABASE_URL_3: ${{ secrets.SUPABASE_URL_3 }}
+          SUPABASE_ANON_KEY_3: ${{ secrets.SUPABASE_ANON_KEY_3 }}
+          SUPABASE_URL_4: ${{ secrets.SUPABASE_URL_4 }}
+          SUPABASE_ANON_KEY_4: ${{ secrets.SUPABASE_ANON_KEY_4 }}
+        run: node ping.js  # Execute the file we created in Step 1
