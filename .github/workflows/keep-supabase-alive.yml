@@ -2,7 +2,7 @@ name: Keep Supabase Alive
 
 on:
   # Run automatically on a schedule (cron format: minute hour day month weekday)
-  # '0 8 * * 1,4' means: at 8:00 AM UTC, every Monday (1) and Thursday (4)
+  # '0 8 * * 1,5' means: at 8:00 AM UTC, every Monday (1) and Friday (5)
   schedule:
     - cron: '0 8 * * 1,4'
   # Also allow triggering manually from GitHub Actions UI (for testing)
