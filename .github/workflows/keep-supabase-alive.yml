@@ -1,28 +1,28 @@
 name: Keep Supabase Alive
-
 on:
   schedule:
-    - cron: '0 8 * * 1,4'   # Mon & Thu — every 3-4 days
+    - cron: '0 8 * * 1,3,5'   # Mon/Wed/Fri — more buffer than Mon/Thu
   workflow_dispatch:
-
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping all Supabase projects
+      - name: Ping all Supabase projects (real DB query)
         env:
           PROJECTS: ${{ secrets.SUPABASE_PROJECTS_JSON }}
         run: |
           echo "$PROJECTS" | jq -c '.[]' | while read project; do
             URL=$(echo "$project" | jq -r '.url')
             KEY=$(echo "$project" | jq -r '.anon_key')
+            TABLE=$(echo "$project" | jq -r '.table // "your_table_name"')
 
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
               -H "apikey: $KEY" \
-              "${URL}/auth/v1/health")
+              -H "Authorization: Bearer $KEY" \
+              "${URL}/rest/v1/${TABLE}?select=*&limit=1")
 
             if [ "$STATUS" = "200" ]; then
-              echo "✅ $URL — alive"
+              echo "✅ $URL — DB query succeeded"
             else
               echo "❌ $URL — HTTP $STATUS"
               exit 1
